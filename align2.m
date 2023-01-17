@@ -8,7 +8,7 @@ The Link Effort Spikes data will store in script folder.
 %}
 
 %{
-Data1 = AutomaticopenEstopInitialAccLevelDaq;
+Data1 = AutomaticopenMaxSpeedLevelDaq;
 importnumber=1;
 %}
 
@@ -76,10 +76,32 @@ shortBlue_y = Blue_y(100:end);
 [pks2,locs2] = findpeaks(Red_y, 'MinPeakProminence',1,'SortStr','descend');
 
 i=1;
-while abs(shortBlue_x(locs1(1))-Red_x(locs2(i)))>0.25
-    shortBlue_x(locs1(1))-Red_x(locs2(i))
+ii=1;
+
+
+
+
+
+
+
+%
+while abs(shortBlue_x(locs1(1))-Red_x(locs2(i)))>0.05*ii || (shortBlue_x(locs1(1))-Red_x(locs2(i)))<0
+    %shortBlue_x(locs1(1))-Red_x(locs2(i))
     i=i+1;
+    
+    if i>length(locs2)
+        ii=ii+1;
+        i=1;
+    end
+    
 end
+
+
+
+
+
+
+
 
 offset = shortBlue_x(locs1(1)) - Red_x(locs2(i));
 
@@ -98,16 +120,16 @@ hold on
 %title(string(files(importnum)),'Interpreter', 'none');
 plot(Red_x,Red_y)
 
-plot(Blue_x(locs1(1)),pks1(1),'v','MarkerFaceColor','r')
+plot(shortBlue_x(locs1(1)),pks1(1),'v','MarkerFaceColor','r')
 plot(Red_x(locs2(i)),pks2(i),'v','MarkerFaceColor','g')
-%text(Blue_x(locs1(i))+0.5,pks1(i),'offset='+string(offset))
+text(Blue_x(locs1(1))+0.5,pks1(1),'offset='+string(offset))
 hold off
 
 
 %Start find maximum and minimum peak point of Link Effort%
 
-[pks3,locs3] = findpeaks(Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',1000);
-[pks4,locs4] = findpeaks(-Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',1000);
+[pks3,locs3] = findpeaks(Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',10000);
+[pks4,locs4] = findpeaks(-Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',10000);
 
 figure(importnum+8);
 plot(Red_x,Red_value)
@@ -117,14 +139,14 @@ hold on
 %plot(Red_x(locs3),pks3,'v','MarkerFaceColor','g')
 
 [sortedX, sortedInds] = sort(pks3(:),'descend'); %Rank by peak y value and select the heighest 10 values
-value1 = pks3(sortedInds(1:10));
-position1 = locs3(sortedInds(1:10));
+value1 = pks3(sortedInds(1:5));
+position1 = locs3(sortedInds(1:5));
 value_matrix1=[position1 value1];
 value_matrix1 = sortrows(value_matrix1,2,'descend');
 
 [sortedX2, sortedInds2] = sort(pks4(:),'descend'); %Rank by peak y value and select the heighest 10 values
-value2 = pks4(sortedInds2(1:10));
-position2 = locs4(sortedInds2(1:10));
+value2 = pks4(sortedInds2(1:5));
+position2 = locs4(sortedInds2(1:5));
 value_matrix2=[position2 value2];
 value_matrix2 = sortrows(value_matrix2,2,'descend');
 
@@ -184,7 +206,8 @@ datarow2 = Data1(value_matrix2(:,1),:);
 target_time2 = Data1(value_matrix2(:,1),19);
 
 
-
+clear target_dataset1;
+clear target_dataset2;
 ti=1;
 target_num=1;
 for target_num=1:3
@@ -209,10 +232,10 @@ end
 
 target_dataset=[target_dataset1;target_dataset2];
 
-plot(Red_x(value_matrix1(1:3,1)),value_matrix1(1:3,2),'v','MarkerFaceColor','r');
+plot(Red_x(value_matrix1(:,1)),value_matrix1(:,2),'v','MarkerFaceColor','r');
 text(Red_x(value_matrix1(:,1))+0.2,value_matrix1(:,2),string(value_matrix1(:,2)));
 
-plot(Red_x(value_matrix2(1:3,1)),-value_matrix2(1:3,2),'v','MarkerFaceColor','r');
+plot(Red_x(value_matrix2(:,1)),-value_matrix2(:,2),'v','MarkerFaceColor','r');
 text(Red_x(value_matrix2(:,1))+0.2,-value_matrix2(:,2),string(-value_matrix2(:,2)));
 
 hold off
