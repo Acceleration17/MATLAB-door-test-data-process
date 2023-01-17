@@ -7,13 +7,15 @@ The Link Effort Spikes data will store in script folder.
 
 %}
 
-%Data1 = SLamOpenCloseSWProtectionOFFPitchPos10Daq;
-%importnumber=1;
+%{
+Data1 = AutomaticopenEstopInitialAccLevelDaq;
+importnumber=1;
+%}
 
 [files,path]=uigetfile('*.xlsx','multiselect','on');
 files = cellstr(files);
 importnumber = length(files);
-
+%}
 for importnum = 1:importnumber
     
     
@@ -70,8 +72,8 @@ shortBlue_y = Blue_y(100:end);
 
 %[pks1,locs1] = findpeaks(Blue_y, 'MinPeakProminence',i);
 %[pks2,locs2] = findpeaks(Red_y, 'MinPeakProminence',i);
-[pks1,locs1,w1,p1] = findpeaks(shortBlue_y,'MinPeakProminence',1 ,'SortStr','descend');
-[pks2,locs2,w2,p2] = findpeaks(Red_y, 'MinPeakProminence',1,'SortStr','descend');
+[pks1,locs1] = findpeaks(shortBlue_y,'MinPeakProminence',1 ,'SortStr','descend');
+[pks2,locs2] = findpeaks(Red_y, 'MinPeakProminence',1,'SortStr','descend');
 
 i=1;
 while abs(shortBlue_x(locs1(1))-Red_x(locs2(i)))>0.25
@@ -87,11 +89,11 @@ offset = shortBlue_x(locs1(1)) - Red_x(locs2(i));
 
 newBlue_x = shortBlue_x-offset;
 
-Data1(:,)
+Data1(:,2)=Data1(:,2)-offset;
 
 figure(importnum);
 %title(string(files))
-plot(newBlue_x,Blue_y)
+plot(newBlue_x,shortBlue_y)
 hold on
 %title(string(files(importnum)),'Interpreter', 'none');
 plot(Red_x,Red_y)
@@ -102,82 +104,124 @@ plot(Red_x(locs2(i)),pks2(i),'v','MarkerFaceColor','g')
 hold off
 
 
+%Start find maximum and minimum peak point of Link Effort%
 
-[pks3,locs3] = findpeaks(Red_value, 'MinPeakDistance',1000);
+[pks3,locs3] = findpeaks(Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',1000);
+[pks4,locs4] = findpeaks(-Red_value, 'MinPeakProminence',1 ,'MinPeakDistance',1000);
+
 figure(importnum+8);
-%title(string(files))
 plot(Red_x,Red_value)
 hold on
 %title(string(files(importnum)),'Interpreter', 'none');
 
 %plot(Red_x(locs3),pks3,'v','MarkerFaceColor','g')
 
-[sortedX, sortedInds] = sort(pks3(:),'descend');
-top10 = sortedInds(1:10);
-value = pks3(top10);
-position = locs3(top10);
+[sortedX, sortedInds] = sort(pks3(:),'descend'); %Rank by peak y value and select the heighest 10 values
+value1 = pks3(sortedInds(1:10));
+position1 = locs3(sortedInds(1:10));
+value_matrix1=[position1 value1];
+value_matrix1 = sortrows(value_matrix1,2,'descend');
 
-value_matrix=[position value];
+[sortedX2, sortedInds2] = sort(pks4(:),'descend'); %Rank by peak y value and select the heighest 10 values
+value2 = pks4(sortedInds2(1:10));
+position2 = locs4(sortedInds2(1:10));
+value_matrix2=[position2 value2];
+value_matrix2 = sortrows(value_matrix2,2,'descend');
 
-LLength = length(position);
-temp = 0;
-value_matrix = sortrows(value_matrix,2,'descend');
 
-while find(abs(diff(value_matrix(:,1)))<5500)~=0
-    storediff=abs(diff(value_matrix(:,1)));
-    
-    value_matrix((find(abs(diff(value_matrix(:,1)))<5500,1)+1),:) = [];
-    %position(find(diff(position)<100,1)+1) = [];
-    LLength = length(position);
+%Start
+%Clear peaks that is too close reference in Y
+while find(abs(diff(value_matrix1(:,1)))<5500)~=0
+    storediff=abs(diff(value_matrix1(:,1)));
+    value_matrix1((find(abs(diff(value_matrix1(:,1)))<5500,1)+1),:) = [];
 end
 
-testvalue_matrix = sortrows(value_matrix,1,'ascend');
-while find(abs(diff(testvalue_matrix(:,1)))<5500)~=0
-    
-    if testvalue_matrix((find(abs(diff(testvalue_matrix(:,1)))<5500,1)+1),2)>testvalue_matrix((find(abs(diff(testvalue_matrix(:,1)))<5500,1)),2)
-        testvalue_matrix((find(abs(diff(testvalue_matrix(:,1)))<5500,1)),:) = [];
+value_matrix1 = sortrows(value_matrix1,1,'ascend');
+
+%Clear peaks that is too close reference in X
+while find(abs(diff(value_matrix1(:,1)))<5500)~=0
+    if value_matrix1((find(abs(diff(value_matrix1(:,1)))<5500,1)+1),2)>value_matrix1((find(abs(diff(value_matrix1(:,1)))<5500,1)),2)
+        value_matrix1((find(abs(diff(value_matrix1(:,1)))<5500,1)),:) = [];
     else
-        testvalue_matrix((find(abs(diff(testvalue_matrix(:,1)))<5500,1))+1,:) = [];
+        value_matrix1((find(abs(diff(value_matrix1(:,1)))<5500,1))+1,:) = [];
     end
-    
-    %position(find(diff(position)<100,1)+1) = [];
-    LLength = length(position);
 end
-%{
-while find(abs(diff(value_matrix(:,1)))<200)~=0
-    storediff=abs(diff(value_matrix(:,1)));
-    temp = LLength;
-    value_matrix((find(abs(diff(value_matrix(:,1)))<200,1)+1),:) = [];
-    %position(find(diff(position)<100,1)+1) = [];
-    LLength = length(position);
-end
-%}
-%value_matrix = sortrows(value_matrix,2,'descend');
-%position = position(1:3);
-%value = value(1:3);
-value_matrix = sortrows(testvalue_matrix,2,'descend');
-value_matrix_length = length(value_matrix);
+value_matrix1 = sortrows(value_matrix1,2,'descend');
+value_matrix1 = value_matrix1(1:3,:);
 
-if value_matrix_length>5
-    
-    value_matrix = value_matrix(1:6,:);
-    
-else
-    value_matrix = value_matrix(1:value_matrix_length,:);
+
+
+
+
+
+%Start
+%Clear peaks that is too close reference in Y
+while find(abs(diff(value_matrix2(:,1)))<5500)~=0
+    storediff=abs(diff(value_matrix2(:,1)));
+    value_matrix2((find(abs(diff(value_matrix2(:,1)))<5500,1)+1),:) = [];
 end
 
-value_matrix_length = length(value_matrix);
+value_matrix2 = sortrows(value_matrix2,1,'ascend');
 
-datarow = Data1(value_matrix(:,1),:);
-plot(Red_x(value_matrix(1:3,1)),value_matrix(1:3,2),'v','MarkerFaceColor','r');
-plot(Red_x(value_matrix(4:value_matrix_length,1)),value_matrix(4:value_matrix_length,2),'v','MarkerFaceColor','b');
-text(Red_x(value_matrix(:,1))+0.2,value_matrix(:,2),string(value_matrix(:,2)));
+%Clear peaks that is too close reference in X
+while find(abs(diff(value_matrix2(:,1)))<5500)~=0
+    if value_matrix2((find(abs(diff(value_matrix2(:,1)))<5500,1)+1),2)>value_matrix2((find(abs(diff(value_matrix2(:,1)))<5500,1)),2)
+        value_matrix2((find(abs(diff(value_matrix2(:,1)))<5500,1)),:) = [];
+    else
+        value_matrix2((find(abs(diff(value_matrix2(:,1)))<5500,1))+1,:) = [];
+    end
+end
+value_matrix2 = sortrows(value_matrix2,2,'descend');
+value_matrix2 = value_matrix2(1:3,:);
+
+
+
+%Write max and min target data into excel
+datarow = Data1(value_matrix1(:,1),:);
+target_time = Data1(value_matrix1(:,1),19);
+
+datarow2 = Data1(value_matrix2(:,1),:);
+target_time2 = Data1(value_matrix2(:,1),19);
+
+
+
+ti=1;
+target_num=1;
+for target_num=1:3
+while abs(Data1(ti,2)-target_time(target_num)) > 0.001
+    ti = ti+1;
+end
+target_dataset1(target_num,:) = [ Data1(ti,1:16) datarow(target_num,17:end)];
+ti=1;
+end
+
+
+
+ti=1;
+target_num=1;
+for target_num=1:3
+while abs(Data1(ti,2)-target_time2(target_num)) > 0.001
+    ti = ti+1;
+end
+target_dataset2(target_num,:) = [ Data1(ti,1:16) datarow2(target_num,17:end)];
+ti=1;
+end
+
+target_dataset=[target_dataset1;target_dataset2];
+
+plot(Red_x(value_matrix1(1:3,1)),value_matrix1(1:3,2),'v','MarkerFaceColor','r');
+text(Red_x(value_matrix1(:,1))+0.2,value_matrix1(:,2),string(value_matrix1(:,2)));
+
+plot(Red_x(value_matrix2(1:3,1)),-value_matrix2(1:3,2),'v','MarkerFaceColor','r');
+text(Red_x(value_matrix2(:,1))+0.2,-value_matrix2(:,2),string(-value_matrix2(:,2)));
+
 hold off
 
 movegui(figure(importnum),[50*importnum 50]);
 movegui(figure(importnum+8),[50*importnum 50+50]);
 
 filename = string(files(importnum));
-writematrix(datarow,filename,'Sheet',1)
+%filename = 'test.xls';
+writematrix(target_dataset,filename,'sheet',1)
 
 end
